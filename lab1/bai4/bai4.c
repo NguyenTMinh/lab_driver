@@ -15,12 +15,13 @@ int gcd(int a, int b) {
 }
 
 int doInit(void) {
-	int arr[] = {12, 18, 24, 30};
+	int arr[] = {12, 5, 24, 30};
     int n = sizeof(arr) / sizeof(arr[0]);
     int result = arr[0];
+    int i;
 
     // tìm ƯCLN của tất cả các số trong chuỗi
-    for (int i = 1; i < n; i++) {
+    for (i = 1; i < n; i++) {
         result = gcd(result, arr[i]);
     }
 

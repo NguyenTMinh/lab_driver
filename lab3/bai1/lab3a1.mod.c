@@ -25,14 +25,12 @@ MODULE_INFO(retpoline, "Y");
 static const struct modversion_info ____versions[]
 __used __section(__versions) = {
 	{ 0xdd8f8694, "module_layout" },
+	{ 0xeb233a45, "__kmalloc" },
 	{ 0xc5850110, "printk" },
-	{ 0xca7a3159, "kmem_cache_alloc_trace" },
-	{ 0x428db41d, "kmalloc_caches" },
-	{ 0xdecd0b29, "__stack_chk_fail" },
 	{ 0xbdfb6dbb, "__fentry__" },
 };
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "0A7DFE654C274A921544F45");
+MODULE_INFO(srcversion, "C3E410F85EE1A3F7BA2C54B");

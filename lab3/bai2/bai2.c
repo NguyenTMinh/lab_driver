@@ -1,81 +1,131 @@
 #include <linux/module.h>
-#include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/moduleparam.h>
-#include <linux/stat.h>
-#include <linux/string.h>
+#include <linux/init.h>
+#include <linux/slab.h>
 #include <linux/ctype.h>
-#define MAX_SIZE 200
-#define COL 3
-#define ROW 3
 
-int choice;
-char XauRo[MAX_SIZE];
-char XauMa[MAX_SIZE];
-char K[MAX_SIZE];
-int K2[MAX_SIZE];
-
-module_param(choice, int, S_IRUGO);
-module_param_string(XauRo, XauRo, sizeof(XauRo), 0644);
-module_param_string(K, K, sizeof(K), 0644);
-module_param_array(K2, int, NULL, 0644);
-
-// ma hoa thay the
-void maHoaThayThe(void) {
-    int lenRo = strlen(XauRo);
-    int i;
-
-    // Duyệt qua từng ký tự trong XauRo
-    for (i = 0; i < lenRo; i++) {
-        char c = XauRo[i];
-
-        // Nếu ký tự không thuộc bảng chữ cái tiếng Anh hoặc không có trong khóa K thì thêm ký tự đó vào XauMa mà không thay đổi
-        if ((c < 'A' || c > 'Z') && (c < 'a' || c > 'z') || strchr(K, c) == NULL) {
-            XauMa[i] = c;
+static void ChuyenVi(char *XauRo,char *XauMa,int k){
+    int i = 0;
+    while(XauRo[i] != '\0'){
+        if(XauRo[i] >= 97 && XauRo[i] <= 122){
+            XauMa[i] = ((((XauRo[i] - 97) + k) % 26) + 97);
         }
-        // Nếu ký tự nằm trong khóa K thì thay thế ký tự đó bằng ký tự tương ứng trong khóa K
-        else {
-            int pos = strchr(K, c) - K;
-            XauMa[i] = K[pos];
+        else if (XauRo[i] >= 65 && XauRo[i] <= 90){
+            XauMa[i] = ((((XauRo[i] - 65) + k) % 26) + 65);
+        }
+        else{
+            XauMa[i] = XauRo[i];
+        }
+        i++;
+    }
+}
+
+static void ThayThe(char *XauRo,char *XauMa,char *k){
+    int i = 0;
+    while(XauRo[i]!='\0'){
+        if(XauRo[i] >= 97 && XauRo[i] <= 122){
+            XauMa[i] = *(k + (XauRo[i] - 97));
+        }
+        else if(XauRo[i] >= 65 && XauRo[i] <= 90){
+            XauMa[i] = *(k + (XauRo[i] - 65));
+        }
+        else{
+            XauMa[i] = XauRo[i];
+        }
+        i++;
+    }
+}
+
+//mã hóa hoán vị toàn cục
+static int findMin(char *temp) {
+    int j,min,index;
+    min=temp[0];
+    index=0;
+    for (j=0;temp[j] != '\0';j++) {
+        if(temp[j]<min) {
+            min=temp[j];
+            index=j;
         }
     }
-    XauMa[lenRo] = '\0'; // Kết thúc chuỗi XauMa
-    printk(KERN_INFO "lab3.bai2. ma hoa thay the: %s", XauMa);
+    temp[index]=123;
+    return index;
 }
 
-// ma hoa hoan vi
-void hoanViToanCuc(char xau[], int khoa[]) {
-    char temp[MAX_SIZE];
-    int i;
-    int doDai = strlen(xau);
-
-    for (i = 0; i < doDai; i++) {
-        temp[i] = xau[khoa[i]];
+static int cipher(int i,int r,int l,char arr[22][22], char *XauMa) {
+    int j;
+    for (j=0;j<r;j++) { {
+            XauMa[l++]=arr[j][i];
+        }
     }
-
-    // strcpy(xau, temp);
-    temp[i] = '\0';
-    printk(KERN_INFO "lab3.bai2. ma hoa thay the: %s", temp);
+    return l;
+    //XauMa[k]='\0';
 }
 
-int __init doInit(void) {
-	switch(choice) {
-		case 1: {
-			maHoaThayThe();
-			break;
-		}
-		case 2: {
-			hoanViToanCuc(XauRo, K2);
-			break;
-		} 
-	}
-	return 0;
+static void HoanViToanCuc(char *XauRo, char *XauMa, char *k){
+    char arr[22][22];
+    char temp[55];
+    int index;
+    strcpy(temp,k);
+    int l=0,flag=0,klen,i,j,row,column;
+    klen = strlen(k);
+    for (i=0; ;i++) {
+        if(flag==1) 
+            break;
+        for (j=0;k[j]!='\0';j++) {
+            if(XauRo[l]=='\0') {
+                flag=1;
+                arr[i][j]='-';
+            } else {
+                arr[i][j]=XauRo[l++];
+            }
+        }
+    }
+    row = i;
+    column = j;
+    
+    l=0;
+    for (i=0;i<klen;i++) {
+        index=findMin(temp);
+        l = cipher(index,row,l,arr,XauMa);
+    }
+    XauMa[l]='\0';
 }
 
-void __exit doExit(void) {
 
+//kmalloc: phan bo bo nho cho cac doi tuong nho hon kich thuoc page trong kernel
+//GFP_KERNEL: phan bo RAM binh thuong
+
+static int __init init_lab(void){
+    char XauRo[30] = "Trong Minh";
+
+    char *XauMaChuyenVi = (char *)kmalloc(30*sizeof(char),GFP_KERNEL);
+    int k1 = 1;
+    
+    char *XauMaThayThe = (char *)kmalloc(30*sizeof(char),GFP_KERNEL);
+    char *k2 = "phqgiumeaylnofdxjkrcvstzwb";
+    
+    char *XauMaHoanViToanCuc = (char *)kmalloc(30*sizeof(char),GFP_KERNEL);
+    char *k3 = "CT4A";
+    
+        printk("\nXau Ro : %s",XauRo);
+    printk(KERN_ALERT "\nThuc hien ma hoa chuyen vi:");
+    ChuyenVi(XauRo,XauMaChuyenVi,k1);   
+    printk("Xau Ma chuyen vi: %s\n",XauMaChuyenVi);
+
+    printk(KERN_ALERT "\nThuc hien ma hoa thay the");
+    ThayThe(XauRo,XauMaThayThe,k2);
+    printk("Xau Ma thay the: %s\n",XauMaThayThe);
+    
+    printk(KERN_ALERT "\nThuc hien ma hoa hoan vi toan cuc");
+    HoanViToanCuc(XauRo,XauMaHoanViToanCuc,k3);
+    printk("Xau Ma hoan vi toan cuc: %s\n",XauMaHoanViToanCuc);
+    return 0;
 }
 
-module_init(doInit);
-module_exit(doExit);
-MODULE_LICENSE("GPL");
+static void __exit exit_lab(void){
+    printk("Exit module");
+    printk("\n");
+}
+
+module_init(init_lab);
+module_exit(exit_lab);

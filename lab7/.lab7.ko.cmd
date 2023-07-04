@@ -1,0 +1,1 @@
+cmd_/home/minh/lab_driver/lab7/lab7.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -z noexecstack   --build-id  -T ./scripts/module-common.lds -o /home/minh/lab_driver/lab7/lab7.ko /home/minh/lab_driver/lab7/lab7.o /home/minh/lab_driver/lab7/lab7.mod.o;  true
